@@ -9,7 +9,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{--bg:#f7f9fc;--panel:#ffffff;--panel2:#f3f6fb;--border:#d8e0ee;--text:#121826;--muted:#667085;--blue:#0050b5;--accent:#00a3d9;--ok:#22a06b;--warn:#f79009;--bad:#d92d20;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
-*{box-sizing:border-box;margin:0;padding:0}body{height:100vh;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);color:var(--text);user-select:none}.topbar{height:92px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:18px;padding:10px 18px;flex:0 0 auto}.logo-card{width:145px;height:68px;border:1px solid var(--border);border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(16,24,40,.08);overflow:hidden}.logo-card img{max-width:128px;max-height:50px;object-fit:contain}.app-title{display:flex;flex-direction:column;line-height:1.2}.app-title b{font-size:18px;color:#0050b5}.app-title span{font-size:14px;font-weight:600}.app-title em{font-size:12px;color:#667085}.status{margin-left:auto;display:flex;align-items:center;gap:7px;color:#667085;font-size:12px}.dot{width:9px;height:9px;border-radius:50%;background:#98a2b3}.dot.live{background:var(--ok);box-shadow:0 0 8px var(--ok)}.dot.warn{background:var(--warn)}.dot.error{background:var(--bad)}#mapWrap{position:relative;flex:1;min-height:0}#gmap{position:absolute;inset:0}.toolbar{position:absolute;top:10px;left:10px;z-index:500;background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:12px;padding:8px;box-shadow:0 8px 28px rgba(16,24,40,.16);width:min(730px,calc(100% - 20px));display:flex;flex-direction:column;gap:7px}.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.mini-sel,.mini-input{height:30px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text);font-size:12px;padding:0 8px;min-width:120px}.wms-url{min-width:290px;flex:3}.wms-layer{min-width:145px;flex:1}.wms-row{display:none}.wms-row.show{display:flex}.mini-sel.crs{min-width:250px;flex:2}.mini-sel.model{min-width:210px;flex:2}.btn{height:30px;border:1px solid var(--border);border-radius:8px;background:#fff;color:#101828;font-size:12px;font-weight:800;padding:0 10px;cursor:pointer}.btn:hover{background:#eef6ff;border-color:#93c5fd}.btn.primary{background:#0050b5;color:#fff;border-color:#0050b5}.btn.active{background:#e0f2fe;border-color:#00a3d9;color:#0050b5}.checks{display:flex;gap:13px;align-items:center;color:#667085;font-size:11px;flex-wrap:wrap}.checks label{display:flex;align-items:center;gap:5px}.checks input{accent-color:#0050b5}.badge{font-size:11px;color:#667085;margin-left:auto}.corner{position:absolute;right:12px;top:12px;z-index:520;display:flex;gap:8px;align-items:flex-start}.level{background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:9px;padding:6px 10px;font-size:12px;font-weight:800;color:#0050b5;box-shadow:0 6px 22px rgba(16,24,40,.12)}#compass{width:46px;height:46px;background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:50%;box-shadow:0 6px 22px rgba(16,24,40,.12)}.controls{position:absolute;right:12px;bottom:12px;z-index:520;display:flex;flex-direction:column;gap:5px}.ctrl{width:34px;height:34px;border:1px solid var(--border);border-radius:9px;background:#fff;font-size:18px;font-weight:900;box-shadow:0 4px 16px rgba(16,24,40,.12)}.info{height:45px;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--border);background:#fff;flex:0 0 auto}.cell{display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid var(--border)}.cell:last-child{border-right:0}.lab{font-size:10px;color:#667085;font-weight:800;text-transform:uppercase}.val{font-size:13px;color:#0050b5;font-weight:900;font-variant-numeric:tabular-nums}.panel{position:absolute;top:102px;left:50%;transform:translateX(-50%);z-index:900;width:min(680px,calc(100% - 22px));background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 18px 60px rgba(16,24,40,.22);display:none}.panel.show{display:block}.panel h3{font-size:15px;color:#0050b5;margin-bottom:5px}.hint{font-size:12px;color:#667085;line-height:1.45;margin-bottom:10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:flex;flex-direction:column;gap:4px}.field label{font-size:11px;color:#667085;font-weight:800}.field input,.field select{height:32px;border:1px solid var(--border);border-radius:8px;padding:0 8px;font-size:12px}.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}.toast{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);z-index:1000;background:rgba(16,24,40,.94);color:#fff;border-radius:9px;padding:8px 13px;font-size:12px;opacity:0;transition:.25s}.toast.show{opacity:1}.camera-icon{width:48px;height:48px;position:relative;transform-origin:24px 24px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}.camera-icon:before{content:"";position:absolute;left:7px;top:0;border-left:17px solid transparent;border-right:17px solid transparent;border-bottom:44px solid #fff;opacity:.98}.camera-icon:after{content:"";position:absolute;left:10px;top:4px;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:37px solid #E53935;opacity:.98}.model-label{font-size:11px;font-weight:900;color:#000;text-shadow:0 1px 4px #fff;white-space:nowrap}.leaflet-interactive{outline:none}.leaflet-container{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}.hidden{display:none!important}
+*{box-sizing:border-box;margin:0;padding:0}body{height:100vh;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);color:var(--text);user-select:none}.topbar{height:92px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:18px;padding:10px 18px;flex:0 0 auto}.logo-card{width:145px;height:68px;border:1px solid var(--border);border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(16,24,40,.08);overflow:hidden}.logo-card img{max-width:128px;max-height:50px;object-fit:contain}.app-title{display:flex;flex-direction:column;line-height:1.2}.app-title b{font-size:18px;color:#0050b5}.app-title span{font-size:14px;font-weight:600}.app-title em{font-size:12px;color:#667085}.status{margin-left:auto;display:flex;align-items:center;gap:7px;color:#667085;font-size:12px}.dot{width:9px;height:9px;border-radius:50%;background:#98a2b3}.dot.live{background:var(--ok);box-shadow:0 0 8px var(--ok)}.dot.warn{background:var(--warn)}.dot.error{background:var(--bad)}#mapWrap{position:relative;flex:1;min-height:0}#gmap{position:absolute;inset:0}.toolbar{position:absolute;top:10px;left:10px;z-index:500;background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:12px;padding:8px;box-shadow:0 8px 28px rgba(16,24,40,.16);width:min(730px,calc(100% - 20px));display:flex;flex-direction:column;gap:7px}.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.mini-sel,.mini-input{height:30px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text);font-size:12px;padding:0 8px;min-width:120px}.wms-url{min-width:290px;flex:3}.wms-layer{min-width:145px;flex:1}.wms-row,.fkb-row{display:none}.wms-row.show,.fkb-row.show{display:flex}.fkb-layer{min-width:290px;flex:2}.mini-sel.crs{min-width:250px;flex:2}.mini-sel.model{min-width:210px;flex:2}.btn{height:30px;border:1px solid var(--border);border-radius:8px;background:#fff;color:#101828;font-size:12px;font-weight:800;padding:0 10px;cursor:pointer}.btn:hover{background:#eef6ff;border-color:#93c5fd}.btn.primary{background:#0050b5;color:#fff;border-color:#0050b5}.btn.active{background:#e0f2fe;border-color:#00a3d9;color:#0050b5}.checks{display:flex;gap:13px;align-items:center;color:#667085;font-size:11px;flex-wrap:wrap}.checks label{display:flex;align-items:center;gap:5px}.checks input{accent-color:#0050b5}.badge{font-size:11px;color:#667085;margin-left:auto}.corner{position:absolute;right:12px;top:12px;z-index:520;display:flex;gap:8px;align-items:flex-start}.level{background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:9px;padding:6px 10px;font-size:12px;font-weight:800;color:#0050b5;box-shadow:0 6px 22px rgba(16,24,40,.12)}#compass{width:46px;height:46px;background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:50%;box-shadow:0 6px 22px rgba(16,24,40,.12)}.controls{position:absolute;right:12px;bottom:12px;z-index:520;display:flex;flex-direction:column;gap:5px}.ctrl{width:34px;height:34px;border:1px solid var(--border);border-radius:9px;background:#fff;font-size:18px;font-weight:900;box-shadow:0 4px 16px rgba(16,24,40,.12)}.info{height:45px;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--border);background:#fff;flex:0 0 auto}.cell{display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid var(--border)}.cell:last-child{border-right:0}.lab{font-size:10px;color:#667085;font-weight:800;text-transform:uppercase}.val{font-size:13px;color:#0050b5;font-weight:900;font-variant-numeric:tabular-nums}.panel{position:absolute;top:102px;left:50%;transform:translateX(-50%);z-index:900;width:min(680px,calc(100% - 22px));background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 18px 60px rgba(16,24,40,.22);display:none}.panel.show{display:block}.panel h3{font-size:15px;color:#0050b5;margin-bottom:5px}.hint{font-size:12px;color:#667085;line-height:1.45;margin-bottom:10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:flex;flex-direction:column;gap:4px}.field label{font-size:11px;color:#667085;font-weight:800}.field input,.field select{height:32px;border:1px solid var(--border);border-radius:8px;padding:0 8px;font-size:12px}.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}.toast{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);z-index:1000;background:rgba(16,24,40,.94);color:#fff;border-radius:9px;padding:8px 13px;font-size:12px;opacity:0;transition:.25s}.toast.show{opacity:1}.camera-icon{width:48px;height:48px;position:relative;transform-origin:24px 24px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}.camera-icon:before{content:"";position:absolute;left:7px;top:0;border-left:17px solid transparent;border-right:17px solid transparent;border-bottom:44px solid #fff;opacity:.98}.camera-icon:after{content:"";position:absolute;left:10px;top:4px;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:37px solid #E53935;opacity:.98}.model-label{font-size:11px;font-weight:900;color:#000;text-shadow:0 1px 4px #fff;white-space:nowrap}.leaflet-interactive{outline:none}.leaflet-container{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}.hidden{display:none!important}
 .title-container{display:flex;align-items:center;gap:14px}.title-container .logo{width:145px;max-height:58px;object-fit:contain}.title-block{display:flex;flex-direction:column;line-height:1.18}.title{font-size:20px;color:#0050b5;margin:0;font-weight:900}.org{font-size:14px;font-weight:700;color:#121826}.dev{font-size:12px;color:#667085}.topbar .title-container{min-width:0}
 @media(max-width:760px){.topbar{height:82px;padding:8px}.logo-card{width:120px;height:58px}.app-title b{font-size:15px}.app-title span{font-size:12px}.app-title em{display:none}.toolbar{width:calc(100% - 20px)}.mini-sel.crs{min-width:100%;}.info{grid-template-columns:repeat(2,1fr);height:70px}.grid{grid-template-columns:1fr}}
 </style>
@@ -36,15 +36,16 @@
       <button id="configBtn" class="btn primary" title="Fast prosjektsystem">EPSG:5110</button>
     </div>
     <div class="row">
-      <select id="mapLayer" class="mini-sel"><option value="kv_topo">Kartverket topo (WMTS)</option><option value="kv_gray">Kartverket gråtone (WMTS)</option><option value="kv_raster">Kartverket raster (WMTS)</option><option value="wms_topo">Kartverket topo (WMS)</option><option value="wms_gray">Kartverket gråtone (WMS)</option><option value="wms_matrikkel">Kartverket matrikkel (WMS)</option><option value="wms_custom">Egen WMS fra Geonorge/Kartverket</option><option value="google_sat">Google ortofoto</option><option value="google_hybrid">Google hybrid</option></select>
+      <select id="mapLayer" class="mini-sel"><option value="kv_topo">Kartverket topo (WMTS)</option><option value="kv_gray">Kartverket gråtone (WMTS)</option><option value="kv_raster">Kartverket raster (WMTS)</option><option value="wms_gray">Kartverket gråtone (WMS)</option><option value="wms_fkb">Kartverket FKB (WMS)</option><option value="google_sat">Google ortofoto</option><option value="google_hybrid">Google hybrid</option></select>
       <span class="badge" style="font-weight:900;color:#0050b5">CRS: Norway/EUREF89NTM | NTM Zone 10 | EPSG:5110</span>
       <span class="badge">Akser: X=øst, Y=nord</span>
     </div>
-    <div id="wmsRow" class="row wms-row">
-      <input id="wmsUrl" class="mini-input wms-url" value="https://wms.geonorge.no/skwms1/wms.topo" title="WMS URL fra Geonorge/Kartverket">
-      <input id="wmsLayers" class="mini-input wms-layer" value="topo" title="WMS lag, f.eks. topo">
-      <button id="applyWms" class="btn">Bruk WMS</button>
-      <span class="badge">Lim inn WMS URL fra Geonorge og angi lag-navn</span>
+    <div id="fkbRow" class="row fkb-row">
+      <select id="fkbLayerSelect" class="mini-sel fkb-layer" title="Velg FKB-lag fra Kartverket WMS">
+        <option value="fkb">Alle FKB-lag</option>
+      </select>
+      <button id="refreshFkbLayers" class="btn" title="Hent lagliste fra Kartverkets GetCapabilities">Hent FKB-lag</button>
+      <span class="badge">FKB WMS: velg lag og zoom nærmere enn ca. 1:12 000</span>
     </div>
     <div class="checks">
       <label><input type="checkbox" id="showFOV" checked> Synsfelt</label>
@@ -61,7 +62,7 @@
 <script>
 'use strict';
 const $ = id => document.getElementById(id);
-let API=null,map=null,baseLayer=null,modelLayers=[],cameraMarker=null,fovLayer=null,pollTimer=null;
+let API=null,map=null,baseLayer=null,fkbOverlay=null,modelLayers=[],cameraMarker=null,fovLayer=null,pollTimer=null;
 let models=[],selectedModelId='__all__',followCamera=true,hasCamera=false;
 let camPos={x:0,y:0,z:0},camDir={x:0,y:1,z:0};
 const cfg={crs:'ntm10',axisOrder:'xy',anchorModelX:0,anchorModelY:0,anchorLat:59.7380059,anchorLng:10.2107246,scaleX:1,scaleY:1,rotation:0};
@@ -99,12 +100,85 @@ function modeFor(x,y){if(cfg.crs==='auto'){const p=axisEN(x,y);return detectCRS(
 function modelToLatLng(x,y){const mode=modeFor(x,y);if(mode==='local')return localToLatLng(x,y);const d=crs(mode);if(d.type==='ntm')cfg.lastNtm=mode;if(d.type==='utm'||d.type==='ntm'){const p=axisEN(x,y);return invTM(p.E,p.N,d);}return localToLatLng(x,y);}
 function headingDeg(){let h=Math.atan2(camDir.x,camDir.y)*180/Math.PI;const mode=modeFor(camPos.x,camPos.y);if(mode==='local')h+=cfg.rotation;return (h+360)%360;}
 function initMap(){map=L.map('gmap',{zoomControl:false,preferCanvas:true,attributionControl:true}).setView([59.7380059,10.2107246],15);map.createPane('modelPane');map.getPane('modelPane').style.zIndex=650;map.createPane('cameraPane');map.getPane('cameraPane').style.zIndex=700;setBaseLayer($('mapLayer').value);$('zoomIn').onclick=()=>map.zoomIn();$('zoomOut').onclick=()=>map.zoomOut();$('resetView').onclick=fitAll;map.on('dragstart',()=>{followCamera=false;$('followBtn').classList.remove('active');});map.on('click',onMapClick);}
-function cleanWmsUrl(url){return String(url||'').replace(/capabilities/ig,'').replace(/[?&](request|service|version)=[^&]*/ig,'').replace(/[?&]$/,'');}
-function toggleWmsRow(key){const row=$('wmsRow');if(row)row.classList.toggle('show',String(key).startsWith('wms_'));}
-function wmsLayer(url,layers,transparent=false){return L.tileLayer.wms(cleanWmsUrl(url),{layers:layers,format:'image/png',transparent:transparent,version:'1.3.0',attribution:'© Kartverket / Geonorge',maxZoom:22});}
+function cleanWmsUrl(url){
+  return String(url||'')
+    .replace(/getcapabilities/ig,'')
+    .replace(/[?&](request|service|version)=[^&]*/ig,'')
+    .replace(/[?&]$/,'');
+}
+function toggleWmsRow(key){
+  const fkb=$('fkbRow');
+  if(fkb)fkb.classList.toggle('show',key==='wms_fkb');
+}
+function wmsLayer(url,layers,transparent=false){
+  return L.tileLayer.wms(cleanWmsUrl(url),{layers:layers,format:'image/png',transparent:transparent,version:'1.3.0',attribution:'© Kartverket / Geonorge',maxZoom:22});
+}
+const FKB_WMS_URL='https://wms.geonorge.no/skwms1/wms.fkb';
+const FKB_FALLBACK_LAYERS=[
+  {name:'fkb',title:'Alle FKB-lag'},
+  {name:'fkb_bygning',title:'FKB Bygning'},
+  {name:'fkb_veg',title:'FKB Veg'},
+  {name:'fkb_vann',title:'FKB Vann'},
+  {name:'fkb_arealbruk',title:'FKB Arealbruk'},
+  {name:'fkb_anlegg',title:'FKB Anlegg'},
+  {name:'fkb_hoydekurve',title:'FKB Høydekurve'},
+  {name:'fkb_traktorvegsti',title:'FKB Traktorveg/Sti'},
+  {name:'fkb_ledning',title:'FKB Ledning'}
+];
+let fkbLayersLoaded=false;
+function fillFkbLayerSelect(items){
+  const sel=$('fkbLayerSelect'); if(!sel)return;
+  const current=sel.value||'fkb';
+  sel.innerHTML='';
+  for(const it of items){
+    const o=document.createElement('option');
+    o.value=it.name;
+    o.textContent=it.title && it.title!==it.name ? `${it.title} (${it.name})` : it.name;
+    sel.appendChild(o);
+  }
+  if([...sel.options].some(o=>o.value===current))sel.value=current;
+}
+async function loadFkbLayersFromCapabilities(){
+  const sel=$('fkbLayerSelect'); if(!sel)return;
+  fillFkbLayerSelect(FKB_FALLBACK_LAYERS);
+  try{
+    const url=FKB_WMS_URL+'?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.3.0';
+    const res=await fetch(url,{mode:'cors'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const txt=await res.text();
+    const xml=new DOMParser().parseFromString(txt,'text/xml');
+    const rootLayer=xml.querySelector('Capability > Layer');
+    const layers=[...xml.querySelectorAll('Layer > Name')].map(n=>{
+      const layer=n.parentElement;
+      const title=layer.querySelector(':scope > Title')?.textContent?.trim()||n.textContent.trim();
+      return {name:n.textContent.trim(),title};
+    }).filter(x=>x.name);
+    const unique=[],seen=new Set();
+    for(const x of [{name:'fkb',title:'Alle FKB-lag'},...layers]){
+      if(!seen.has(x.name)){unique.push(x);seen.add(x.name);}
+    }
+    if(unique.length>1){fillFkbLayerSelect(unique);fkbLayersLoaded=true;toast('FKB-lagliste hentet fra Kartverket');}
+  }catch(e){
+    console.warn('Kunne ikke hente FKB GetCapabilities, bruker fallback-liste',e);
+    fkbLayersLoaded=false;
+    toast('Bruker lokal FKB-lagliste. GetCapabilities kunne ikke hentes i nettleseren.',3500);
+  }
+}
+function updateFkbOverlay(){
+  if(!map)return;
+  if(fkbOverlay){try{map.removeLayer(fkbOverlay);}catch(e){} fkbOverlay=null;}
+  const layer=$('fkbLayerSelect')?.value||'fkb';
+  fkbOverlay=wmsLayer(FKB_WMS_URL,layer,true);
+  fkbOverlay.setOpacity(0.95);
+  fkbOverlay.setZIndex(620);
+  fkbOverlay.on('tileerror',()=>toast('FKB-laget ga ikke kartfliser. Prøv å zoome nærmere inn eller velg «Alle FKB-lag».',4500));
+  fkbOverlay.addTo(map);
+  toast('FKB-lag aktivert: '+layer,2200);
+}
 function setBaseLayer(key){
   if(!map)return;
   if(baseLayer)map.removeLayer(baseLayer);
+  if(fkbOverlay){try{map.removeLayer(fkbOverlay);}catch(e){} fkbOverlay=null;}
   toggleWmsRow(key);
   const wmts={
     kv_topo:['https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png','© Kartverket',20],
@@ -113,22 +187,17 @@ function setBaseLayer(key){
     google_sat:['https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}','© Google',22],
     google_hybrid:['https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}','© Google',22]
   };
-  if(key==='wms_topo'){
-    if($('wmsUrl')){$('wmsUrl').value='https://wms.geonorge.no/skwms1/wms.topo';$('wmsLayers').value='topo';}
-    baseLayer=wmsLayer('https://wms.geonorge.no/skwms1/wms.topo','topo',false).addTo(map);return;
-  }
   if(key==='wms_gray'){
-    if($('wmsUrl')){$('wmsUrl').value='https://wms.geonorge.no/skwms1/wms.topograatone';$('wmsLayers').value='topograatone';}
     baseLayer=wmsLayer('https://wms.geonorge.no/skwms1/wms.topograatone','topograatone',false).addTo(map);return;
   }
-  if(key==='wms_matrikkel'){
-    if($('wmsUrl')){$('wmsUrl').value='https://wms.geonorge.no/skwms1/wms.matrikkel';$('wmsLayers').value='matrikkel';}
-    baseLayer=wmsLayer('https://wms.geonorge.no/skwms1/wms.matrikkel','matrikkel',true).addTo(map);return;
-  }
-  if(key==='wms_custom'){
-    const url=$('wmsUrl')?.value||'https://wms.geonorge.no/skwms1/wms.topo';
-    const layers=$('wmsLayers')?.value||'topo';
-    baseLayer=wmsLayer(url,layers,true).addTo(map);return;
+  if(key==='wms_fkb'){
+    // FKB fungerer best som transparent faglag over ortofoto.
+    const spec=wmts.google_sat;
+    baseLayer=L.tileLayer(spec[0],{maxZoom:spec[2],attribution:spec[1]}).addTo(map);
+    fillFkbLayerSelect(FKB_FALLBACK_LAYERS);
+    if(!fkbLayersLoaded)loadFkbLayersFromCapabilities().finally(updateFkbOverlay);
+    else updateFkbOverlay();
+    return;
   }
   const spec=wmts[key]||wmts.kv_topo;
   baseLayer=L.tileLayer(spec[0],{maxZoom:spec[2],attribution:spec[1]}).addTo(map);
@@ -190,7 +259,13 @@ function wireUI(){
   if(byId('centerCamera')) byId('centerCamera').onclick=()=>{if(hasCamera&&map)map.setView(modelToLatLng(camPos.x,camPos.y),Math.max(map.getZoom(),18));};
   if(byId('followBtn')) byId('followBtn').onclick=()=>{followCamera=!followCamera;byId('followBtn').classList.toggle('active',followCamera);if(followCamera&&byId('centerCamera'))byId('centerCamera').click();};
   if(byId('mapLayer')) byId('mapLayer').onchange=()=>setBaseLayer(byId('mapLayer').value);
-  if(byId('applyWms')) byId('applyWms').onclick=()=>{if(byId('mapLayer'))byId('mapLayer').value='wms_custom';setBaseLayer('wms_custom');toast('WMS-lag oppdatert');};
+  if(byId('fkbLayerSelect')) byId('fkbLayerSelect').onchange=()=>{if(byId('mapLayer'))byId('mapLayer').value='wms_fkb'; if(!fkbOverlay && map) setBaseLayer('wms_fkb'); else updateFkbOverlay(); toast('FKB-lag oppdatert');};
+  if(byId('refreshFkbLayers')) byId('refreshFkbLayers').onclick=async()=>{
+    if(byId('mapLayer'))byId('mapLayer').value='wms_fkb';
+    await loadFkbLayersFromCapabilities();
+    setBaseLayer('wms_fkb');
+    updateFkbOverlay();
+  };
   if(byId('configBtn')) byId('configBtn').onclick=()=>byId('setupPanel').classList.add('show');
   if(byId('saveCfg')) byId('saveCfg').onclick=saveCfg;
   if(byId('closeCfg')) byId('closeCfg').onclick=()=>byId('setupPanel').classList.remove('show');
