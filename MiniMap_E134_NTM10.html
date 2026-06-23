@@ -63,6 +63,7 @@
 'use strict';
 const $ = id => document.getElementById(id);
 let API=null,map=null,baseLayer=null,fkbOverlay=null,modelLayers=[],cameraMarker=null,fovLayer=null,pollTimer=null;
+let fkbUpdateTimer=null;
 let models=[],selectedModelId='__all__',followCamera=true,hasCamera=false;
 let camPos={x:0,y:0,z:0},camDir={x:0,y:1,z:0};
 const cfg={crs:'ntm10',axisOrder:'xy',anchorModelX:0,anchorModelY:0,anchorLat:59.7380059,anchorLng:10.2107246,scaleX:1,scaleY:1,rotation:0};
@@ -99,7 +100,7 @@ function localToLatLng(x,y){const dx=(x-cfg.anchorModelX)*cfg.scaleX,dy=(y-cfg.a
 function modeFor(x,y){if(cfg.crs==='auto'){const p=axisEN(x,y);return detectCRS(p.E,p.N);}return cfg.crs;}
 function modelToLatLng(x,y){const mode=modeFor(x,y);if(mode==='local')return localToLatLng(x,y);const d=crs(mode);if(d.type==='ntm')cfg.lastNtm=mode;if(d.type==='utm'||d.type==='ntm'){const p=axisEN(x,y);return invTM(p.E,p.N,d);}return localToLatLng(x,y);}
 function headingDeg(){let h=Math.atan2(camDir.x,camDir.y)*180/Math.PI;const mode=modeFor(camPos.x,camPos.y);if(mode==='local')h+=cfg.rotation;return (h+360)%360;}
-function initMap(){map=L.map('gmap',{zoomControl:false,preferCanvas:true,attributionControl:true}).setView([59.7380059,10.2107246],15);map.createPane('modelPane');map.getPane('modelPane').style.zIndex=650;map.createPane('cameraPane');map.getPane('cameraPane').style.zIndex=700;setBaseLayer($('mapLayer').value);$('zoomIn').onclick=()=>map.zoomIn();$('zoomOut').onclick=()=>map.zoomOut();$('resetView').onclick=fitAll;map.on('dragstart',()=>{followCamera=false;$('followBtn').classList.remove('active');});map.on('click',onMapClick);}
+function initMap(){map=L.map('gmap',{zoomControl:false,preferCanvas:true,attributionControl:true}).setView([59.7380059,10.2107246],15);map.createPane('modelPane');map.getPane('modelPane').style.zIndex=650;map.createPane('cameraPane');map.getPane('cameraPane').style.zIndex=700;setBaseLayer($('mapLayer').value);$('zoomIn').onclick=()=>map.zoomIn();$('zoomOut').onclick=()=>map.zoomOut();$('resetView').onclick=fitAll;map.on('dragstart',()=>{followCamera=false;$('followBtn').classList.remove('active');});map.on('click',onMapClick);map.on('moveend zoomend resize',()=>{if($('mapLayer')?.value==='wms_fkb')scheduleFkbOverlayUpdate();});}
 function cleanWmsUrl(url){
   return String(url||'')
     .replace(/getcapabilities/ig,'')
@@ -114,21 +115,23 @@ function wmsLayer(url,layers,transparent=false){
   return L.tileLayer.wms(cleanWmsUrl(url),{layers:layers,format:'image/png',transparent:transparent,version:'1.3.0',attribution:'© Kartverket / Geonorge',maxZoom:22});
 }
 const FKB_WMS_URL='https://wms.geonorge.no/skwms1/wms.fkb';
+const FKB_ALL_LAYERS='arealbruk,hoydekurver_5m,hoydekurver_1m,hoydepunkt,vann_omrade,vannkontur,ledningslinje,ledningspunkt,ledningsgrense,naturinformasjon,bygning,bygningspunkt,bygningsavgrensning,tiltak,traktorveg_sti,veg,vegavgrensning,bane,lufthavn,kommunegrenser,fylkesgrenser,riksgrense';
 const FKB_FALLBACK_LAYERS=[
-  {name:'fkb',title:'Alle FKB-lag'},
-  {name:'fkb_bygning',title:'FKB Bygning'},
-  {name:'fkb_veg',title:'FKB Veg'},
-  {name:'fkb_vann',title:'FKB Vann'},
-  {name:'fkb_arealbruk',title:'FKB Arealbruk'},
-  {name:'fkb_anlegg',title:'FKB Anlegg'},
-  {name:'fkb_hoydekurve',title:'FKB Høydekurve'},
-  {name:'fkb_traktorvegsti',title:'FKB Traktorveg/Sti'},
-  {name:'fkb_ledning',title:'FKB Ledning'}
+  {name:'__all__',title:'Alle FKB-lag'},
+  {name:'vann_omrade,vannkontur',title:'FKB Vann'},
+  {name:'bygning,bygningspunkt,bygningsavgrensning',title:'FKB Bygning'},
+  {name:'veg,vegavgrensning',title:'FKB Veg'},
+  {name:'traktorveg_sti',title:'FKB Traktorveg/Sti'},
+  {name:'arealbruk',title:'FKB Arealbruk'},
+  {name:'hoydekurver_5m,hoydekurver_1m,hoydepunkt',title:'FKB Høyde'},
+  {name:'ledningslinje,ledningspunkt,ledningsgrense',title:'FKB Ledning'},
+  {name:'tiltak',title:'FKB Tiltak'},
+  {name:'kommunegrenser,fylkesgrenser,riksgrense',title:'Administrative grenser'}
 ];
 let fkbLayersLoaded=false;
 function fillFkbLayerSelect(items){
   const sel=$('fkbLayerSelect'); if(!sel)return;
-  const current=sel.value||'fkb';
+  const current=sel.value||'__all__';
   sel.innerHTML='';
   for(const it of items){
     const o=document.createElement('option');
@@ -147,14 +150,14 @@ async function loadFkbLayersFromCapabilities(){
     if(!res.ok)throw new Error('HTTP '+res.status);
     const txt=await res.text();
     const xml=new DOMParser().parseFromString(txt,'text/xml');
-    const rootLayer=xml.querySelector('Capability > Layer');
     const layers=[...xml.querySelectorAll('Layer > Name')].map(n=>{
       const layer=n.parentElement;
       const title=layer.querySelector(':scope > Title')?.textContent?.trim()||n.textContent.trim();
       return {name:n.textContent.trim(),title};
-    }).filter(x=>x.name);
+    }).filter(x=>x.name && x.name.toLowerCase()!=='wms');
+    const preferred=[{name:'__all__',title:'Alle FKB-lag'}];
     const unique=[],seen=new Set();
-    for(const x of [{name:'fkb',title:'Alle FKB-lag'},...layers]){
+    for(const x of [...preferred,...layers]){
       if(!seen.has(x.name)){unique.push(x);seen.add(x.name);}
     }
     if(unique.length>1){fillFkbLayerSelect(unique);fkbLayersLoaded=true;toast('FKB-lagliste hentet fra Kartverket');}
@@ -164,16 +167,42 @@ async function loadFkbLayersFromCapabilities(){
     toast('Bruker lokal FKB-lagliste. GetCapabilities kunne ikke hentes i nettleseren.',3500);
   }
 }
-function updateFkbOverlay(){
-  if(!map)return;
-  if(fkbOverlay){try{map.removeLayer(fkbOverlay);}catch(e){} fkbOverlay=null;}
-  const layer=$('fkbLayerSelect')?.value||'fkb';
-  fkbOverlay=wmsLayer(FKB_WMS_URL,layer,true);
-  fkbOverlay.setOpacity(0.95);
-  fkbOverlay.setZIndex(620);
-  fkbOverlay.on('tileerror',()=>toast('FKB-laget ga ikke kartfliser. Prøv å zoome nærmere inn eller velg «Alle FKB-lag».',4500));
-  fkbOverlay.addTo(map);
-  toast('FKB-lag aktivert: '+layer,2200);
+function selectedFkbLayers(){
+  const v=$('fkbLayerSelect')?.value||'__all__';
+  return v==='__all__' ? FKB_ALL_LAYERS : v;
+}
+function fkbGetMapUrl(){
+  const size=map.getSize();
+  const b=map.getBounds();
+  const pts=[b.getSouthWest(),b.getNorthWest(),b.getSouthEast(),b.getNorthEast()].map(ll=>fwdTM(ll.lat,ll.lng,crs('utm33')));
+  const minE=Math.min(...pts.map(p=>p.E)), maxE=Math.max(...pts.map(p=>p.E));
+  const minN=Math.min(...pts.map(p=>p.N)), maxN=Math.max(...pts.map(p=>p.N));
+  const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  const width=Math.max(256,Math.round(size.x*dpr));
+  const height=Math.max(256,Math.round(size.y*dpr));
+  const params=new URLSearchParams({
+    SERVICE:'WMS', VERSION:'1.3.0', REQUEST:'GetMap',
+    LAYERS:selectedFkbLayers(), STYLES:'', FORMAT:'image/png', TRANSPARENT:'TRUE',
+    CRS:'EPSG:25833', BBOX:[minE,minN,maxE,maxN].join(','), WIDTH:String(width), HEIGHT:String(height),
+    _t:String(Date.now())
+  });
+  return FKB_WMS_URL+'?'+params.toString();
+}
+function scheduleFkbOverlayUpdate(){
+  if(fkbUpdateTimer)clearTimeout(fkbUpdateTimer);
+  fkbUpdateTimer=setTimeout(()=>updateFkbOverlay(false),180);
+}
+function updateFkbOverlay(showMsg=true){
+  if(!map || $('mapLayer')?.value!=='wms_fkb')return;
+  const z=map.getZoom();
+  if(z<15 && showMsg)toast('FKB vises normalt først når du zoomer nærmere inn (ca. 1:12 000 eller større).',3500);
+  const bounds=map.getBounds();
+  const url=fkbGetMapUrl();
+  const next=L.imageOverlay(url,bounds,{opacity:0.95,interactive:false,zIndex:620});
+  next.on('error',()=>toast('FKB WMS ga feilmelding. Filen bruker nå EPSG:25833 GetMap-bilde i stedet for WebMercator-fliser. Prøv et konkret underlag som Vannkontur/Veg/Bygning og zoom nærmere inn.',6500));
+  next.on('load',()=>{ if(fkbOverlay && fkbOverlay!==next){try{map.removeLayer(fkbOverlay);}catch(e){}} fkbOverlay=next; });
+  next.addTo(map);
+  if(showMsg)toast('FKB-lag aktivert: '+selectedFkbLayers(),2200);
 }
 function setBaseLayer(key){
   if(!map)return;
