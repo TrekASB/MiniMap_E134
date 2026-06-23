@@ -115,23 +115,23 @@ function wmsLayer(url,layers,transparent=false){
   return L.tileLayer.wms(cleanWmsUrl(url),{layers:layers,format:'image/png',transparent:transparent,version:'1.3.0',attribution:'© Kartverket / Geonorge',maxZoom:22});
 }
 const FKB_WMS_URL='https://wms.geonorge.no/skwms1/wms.fkb';
-const FKB_ALL_LAYERS='arealbruk,hoydekurver_5m,hoydekurver_1m,hoydepunkt,vann_omrade,vannkontur,ledningslinje,ledningspunkt,ledningsgrense,naturinformasjon,bygning,bygningspunkt,bygningsavgrensning,tiltak,traktorveg_sti,veg,vegavgrensning,bane,lufthavn,kommunegrenser,fylkesgrenser,riksgrense';
+const FKB_CAP_URL=FKB_WMS_URL+'?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.3.0';
 const FKB_FALLBACK_LAYERS=[
-  {name:'__all__',title:'Alle FKB-lag'},
-  {name:'vann_omrade,vannkontur',title:'FKB Vann'},
-  {name:'bygning,bygningspunkt,bygningsavgrensning',title:'FKB Bygning'},
-  {name:'veg,vegavgrensning',title:'FKB Veg'},
-  {name:'traktorveg_sti',title:'FKB Traktorveg/Sti'},
-  {name:'arealbruk',title:'FKB Arealbruk'},
-  {name:'hoydekurver_5m,hoydekurver_1m,hoydepunkt',title:'FKB Høyde'},
-  {name:'ledningslinje,ledningspunkt,ledningsgrense',title:'FKB Ledning'},
-  {name:'tiltak',title:'FKB Tiltak'},
-  {name:'kommunegrenser,fylkesgrenser,riksgrense',title:'Administrative grenser'}
+  {name:'fkb',title:'Alle FKB-lag'},
+  {name:'fkb_vann',title:'FKB Vann'},
+  {name:'fkb_bygning',title:'FKB Bygning'},
+  {name:'fkb_veg',title:'FKB Veg'},
+  {name:'fkb_traktorvegsti',title:'FKB Traktorveg/Sti'},
+  {name:'fkb_arealbruk',title:'FKB Arealbruk'},
+  {name:'fkb_hoyde',title:'FKB Høyde'},
+  {name:'fkb_ledning',title:'FKB Ledning'},
+  {name:'fkb_tiltak',title:'FKB Tiltak'}
 ];
 let fkbLayersLoaded=false;
+let fkbCapabilityLayers=[];
 function fillFkbLayerSelect(items){
   const sel=$('fkbLayerSelect'); if(!sel)return;
-  const current=sel.value||'__all__';
+  const current=sel.value||'fkb';
   sel.innerHTML='';
   for(const it of items){
     const o=document.createElement('option');
@@ -141,40 +141,74 @@ function fillFkbLayerSelect(items){
   }
   if([...sel.options].some(o=>o.value===current))sel.value=current;
 }
+function groupNames(rxInclude,rxExclude){
+  const out=[];
+  const inc=rxInclude, exc=rxExclude;
+  for(const l of fkbCapabilityLayers){
+    const text=((l.name||'')+' '+(l.title||'')).toLowerCase();
+    if(inc.test(text) && !(exc&&exc.test(text)))out.push(l.name);
+  }
+  return [...new Set(out)].join(',');
+}
+function buildFkbChoicesFromCapabilities(layers){
+  fkbCapabilityLayers=layers;
+  const choices=[];
+  const push=(name,title)=>{ if(name) choices.push({name,title}); };
+  const all=layers.map(l=>l.name).filter(Boolean).join(',');
+  push(all||'fkb','Alle FKB-lag');
+  push(groupNames(/vann|innsj|elv|bekk|kyst|sjø|sjo|vass/i), 'FKB Vann');
+  push(groupNames(/bygning|bygg/i), 'FKB Bygning');
+  push(groupNames(/veg|vei|kjøre|kjore|kant|senterlinje/i,/traktor|sti|bane|jernbane/i), 'FKB Veg');
+  push(groupNames(/traktor|sti/i), 'FKB Traktorveg/Sti');
+  push(groupNames(/arealbruk|areal/i), 'FKB Arealbruk');
+  push(groupNames(/høyde|hoyde|kurve|punkt/i), 'FKB Høyde');
+  push(groupNames(/ledning|mast|kum|sluk/i), 'FKB Ledning');
+  push(groupNames(/tiltak/i), 'FKB Tiltak');
+  push(groupNames(/bane|jernbane/i), 'FKB Bane');
+  // Legg også til enkeltlagene fra GetCapabilities nederst for presis feilsøking/valg.
+  for(const l of layers){ push(l.name,l.title||l.name); }
+  const seen=new Set();
+  return choices.filter(x=>x.name && !seen.has(x.name) && seen.add(x.name));
+}
 async function loadFkbLayersFromCapabilities(){
-  const sel=$('fkbLayerSelect'); if(!sel)return;
   fillFkbLayerSelect(FKB_FALLBACK_LAYERS);
   try{
-    const url=FKB_WMS_URL+'?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.3.0';
-    const res=await fetch(url,{mode:'cors'});
+    const res=await fetch(FKB_CAP_URL,{mode:'cors',cache:'no-store'});
     if(!res.ok)throw new Error('HTTP '+res.status);
     const txt=await res.text();
     const xml=new DOMParser().parseFromString(txt,'text/xml');
-    const layers=[...xml.querySelectorAll('Layer > Name')].map(n=>{
-      const layer=n.parentElement;
-      const title=layer.querySelector(':scope > Title')?.textContent?.trim()||n.textContent.trim();
-      return {name:n.textContent.trim(),title};
-    }).filter(x=>x.name && x.name.toLowerCase()!=='wms');
-    const preferred=[{name:'__all__',title:'Alle FKB-lag'}];
-    const unique=[],seen=new Set();
-    for(const x of [...preferred,...layers]){
-      if(!seen.has(x.name)){unique.push(x);seen.add(x.name);}
+    const layers=[...xml.querySelectorAll('Layer')].map(layer=>{
+      const n=layer.querySelector(':scope > Name')?.textContent?.trim();
+      const title=layer.querySelector(':scope > Title')?.textContent?.trim()||n;
+      return n?{name:n,title:title||n}:null;
+    }).filter(Boolean).filter(x=>x.name.toLowerCase()!=='wms');
+    if(layers.length){
+      fillFkbLayerSelect(buildFkbChoicesFromCapabilities(layers));
+      fkbLayersLoaded=true;
+      toast('FKB-lagliste hentet fra Kartverket');
+      return true;
     }
-    if(unique.length>1){fillFkbLayerSelect(unique);fkbLayersLoaded=true;toast('FKB-lagliste hentet fra Kartverket');}
   }catch(e){
     console.warn('Kunne ikke hente FKB GetCapabilities, bruker fallback-liste',e);
-    fkbLayersLoaded=false;
-    toast('Bruker lokal FKB-lagliste. GetCapabilities kunne ikke hentes i nettleseren.',3500);
   }
+  fkbLayersLoaded=false;
+  toast('Bruker lokal FKB-lagliste. GetCapabilities kunne ikke hentes i nettleseren.',3500);
+  return false;
 }
 function selectedFkbLayers(){
-  const v=$('fkbLayerSelect')?.value||'__all__';
-  return v==='__all__' ? FKB_ALL_LAYERS : v;
+  return $('fkbLayerSelect')?.value || 'fkb';
+}
+function utmCrsForMap(){
+  const c=map?.getCenter?.() || L.latLng(59.7,10.2);
+  // UTM-sone etter lengdegrad. EPSG:25832 brukes normalt rundt E134/Drammen/Kongsberg-området.
+  const zone=Math.max(29,Math.min(36,Math.floor((c.lng+180)/6)+1));
+  return crs('utm'+zone) || crs('utm32');
 }
 function fkbGetMapUrl(){
   const size=map.getSize();
   const b=map.getBounds();
-  const pts=[b.getSouthWest(),b.getNorthWest(),b.getSouthEast(),b.getNorthEast()].map(ll=>fwdTM(ll.lat,ll.lng,crs('utm33')));
+  const d=utmCrsForMap();
+  const pts=[b.getSouthWest(),b.getNorthWest(),b.getSouthEast(),b.getNorthEast()].map(ll=>fwdTM(ll.lat,ll.lng,d));
   const minE=Math.min(...pts.map(p=>p.E)), maxE=Math.max(...pts.map(p=>p.E));
   const minN=Math.min(...pts.map(p=>p.N)), maxN=Math.max(...pts.map(p=>p.N));
   const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
@@ -183,26 +217,32 @@ function fkbGetMapUrl(){
   const params=new URLSearchParams({
     SERVICE:'WMS', VERSION:'1.3.0', REQUEST:'GetMap',
     LAYERS:selectedFkbLayers(), STYLES:'', FORMAT:'image/png', TRANSPARENT:'TRUE',
-    CRS:'EPSG:25833', BBOX:[minE,minN,maxE,maxN].join(','), WIDTH:String(width), HEIGHT:String(height),
-    _t:String(Date.now())
+    CRS:'EPSG:'+d.epsg, BBOX:[minE,minN,maxE,maxN].join(','), WIDTH:String(width), HEIGHT:String(height)
   });
   return FKB_WMS_URL+'?'+params.toString();
 }
 function scheduleFkbOverlayUpdate(){
   if(fkbUpdateTimer)clearTimeout(fkbUpdateTimer);
-  fkbUpdateTimer=setTimeout(()=>updateFkbOverlay(false),180);
+  fkbUpdateTimer=setTimeout(()=>updateFkbOverlay(false),220);
 }
 function updateFkbOverlay(showMsg=true){
   if(!map || $('mapLayer')?.value!=='wms_fkb')return;
+  if(!selectedFkbLayers())return;
   const z=map.getZoom();
-  if(z<15 && showMsg)toast('FKB vises normalt først når du zoomer nærmere inn (ca. 1:12 000 eller større).',3500);
+  if(z<15 && showMsg)toast('FKB vises normalt først når du zoomer nærmere inn enn ca. 1:12 000.',3500);
   const bounds=map.getBounds();
   const url=fkbGetMapUrl();
   const next=L.imageOverlay(url,bounds,{opacity:0.95,interactive:false,zIndex:620});
-  next.on('error',()=>toast('FKB WMS ga feilmelding. Filen bruker nå EPSG:25833 GetMap-bilde i stedet for WebMercator-fliser. Prøv et konkret underlag som Vannkontur/Veg/Bygning og zoom nærmere inn.',6500));
-  next.on('load',()=>{ if(fkbOverlay && fkbOverlay!==next){try{map.removeLayer(fkbOverlay);}catch(e){}} fkbOverlay=next; });
+  next.on('error',()=>{
+    toast('FKB WMS ga feilmelding. Prøv «Hent FKB-lag», velg enkeltlag fra listen, og zoom nærmere inn.',6500);
+    console.warn('FKB GetMap feilet:',url);
+  });
+  next.on('load',()=>{
+    if(fkbOverlay && fkbOverlay!==next){try{map.removeLayer(fkbOverlay);}catch(e){}}
+    fkbOverlay=next;
+  });
   next.addTo(map);
-  if(showMsg)toast('FKB-lag aktivert: '+selectedFkbLayers(),2200);
+  if(showMsg)toast('FKB-lag aktivert',1800);
 }
 function setBaseLayer(key){
   if(!map)return;
@@ -251,57 +291,4 @@ async function pollCamera(){if(!API)return;const calls=[()=>API.viewer?.getCamer
 async function initTrimble(){try{API=await TrimbleConnectWorkspace.connect(window.parent,(event,args)=>{const ev=String(event).toLowerCase();if(ev.includes('camera')||ev.includes('view')){const d=args?.data??args?.camera??args;parseCamera(d);}});setStatus('live','Trimble tilkoblet');await safe(()=>API.viewer?.subscribeToCamera?.());await safe(()=>API.viewer?.enableCameraEvents?.());pollTimer=setInterval(pollCamera,700);pollCamera();}catch(e){console.error(e);setStatus('error','Trimble ikke tilkoblet');toast('Trimble Connect API ikke tilgjengelig');}}
 function readCfg(){cfg.crs='ntm10';cfg.axisOrder='xy';try{localStorage.setItem('tc_minimap_v22_ntm10',JSON.stringify(cfg));}catch(e){}if($('coordMode'))$('coordMode').value='ntm10';if($('cfgCRS'))$('cfgCRS').value='ntm10';if($('axisOrder'))$('axisOrder').value='xy';if($('cfgAxis'))$('cfgAxis').value='xy';}
 function saveCfg(){cfg.crs='ntm10';cfg.axisOrder='xy';$('setupPanel').classList.remove('show');drawModels();updateCamera();fitAll();toast('Fast prosjektsystem: EPSG:5110 / NN2000');}
-function syncTopCRS(){cfg.crs='ntm10';drawModels();updateCamera();fitAll();}
-function syncAxis(){cfg.axisOrder='xy';drawModels();updateCamera();fitAll();}
-async function onMapClick(e){if(!$('clickMove').checked||!API||!hasCamera)return;const target=latLngToModel(e.latlng);const cam={position:{x:target.x,y:target.y,z:target.z},direction:camDir};let ok=false;const calls=[()=>API.viewer?.setCamera?.(cam),()=>API.viewer?.camera?.setCamera?.(cam),()=>API.viewer?.setView?.({camera:cam}),()=>API.viewer?.moveCamera?.(cam)];for(const c of calls){const r=await safe(c);if(r!==null){ok=true;break;}}camPos={x:target.x,y:target.y,z:target.z};updateCamera();toast(ok?'Kamera flyttet til NTM10-posisjon':'Kartposisjon beregnet, men Trimble API støtter ikke kameraflytting her');}
-
-function openStreetView(){
-  let ll = null;
-  if(hasCamera){
-    ll = modelToLatLng(camPos.x, camPos.y);
-  } else if(map){
-    ll = map.getCenter();
-  }
-  if(!ll){
-    toast('Ingen kart- eller kameraposisjon tilgjengelig');
-    return;
-  }
-
-  const lat = Number(ll.lat).toFixed(7);
-  const lng = Number(ll.lng).toFixed(7);
-  const bearing = hasCamera ? Math.round(headingDeg()) : 0;
-
-  // Robust løsning for Trimble Connect: åpner Google Street View i ny fane
-  // i stedet for å laste Google Maps JS API inne i extensionen.
-  // Dette hindrer at Street View stopper Leaflet/Kartverket-kartet.
-  const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}&heading=${bearing}&pitch=0&fov=80`;
-  const w = window.open(url, '_blank', 'noopener,noreferrer');
-  if(!w){
-    toast('Nettleseren blokkerte ny fane. Tillat popup for Street View.');
-  } else {
-    toast('Åpner Google Street View i ny fane');
-  }
-}
-
-function wireUI(){
-  const byId=(id)=>$(id);
-  if(byId('centerCamera')) byId('centerCamera').onclick=()=>{if(hasCamera&&map)map.setView(modelToLatLng(camPos.x,camPos.y),Math.max(map.getZoom(),18));};
-  if(byId('followBtn')) byId('followBtn').onclick=()=>{followCamera=!followCamera;byId('followBtn').classList.toggle('active',followCamera);if(followCamera&&byId('centerCamera'))byId('centerCamera').click();};
-  if(byId('mapLayer')) byId('mapLayer').onchange=()=>setBaseLayer(byId('mapLayer').value);
-  if(byId('fkbLayerSelect')) byId('fkbLayerSelect').onchange=()=>{if(byId('mapLayer'))byId('mapLayer').value='wms_fkb'; if(!fkbOverlay && map) setBaseLayer('wms_fkb'); else updateFkbOverlay(); toast('FKB-lag oppdatert');};
-  if(byId('refreshFkbLayers')) byId('refreshFkbLayers').onclick=async()=>{
-    if(byId('mapLayer'))byId('mapLayer').value='wms_fkb';
-    await loadFkbLayersFromCapabilities();
-    setBaseLayer('wms_fkb');
-    updateFkbOverlay();
-  };
-  if(byId('configBtn')) byId('configBtn').onclick=()=>byId('setupPanel').classList.add('show');
-  if(byId('saveCfg')) byId('saveCfg').onclick=saveCfg;
-  if(byId('closeCfg')) byId('closeCfg').onclick=()=>byId('setupPanel').classList.remove('show');
-  if(byId('streetViewBtn')) byId('streetViewBtn').onclick=openStreetView;
-  if(byId('showFOV')) byId('showFOV').onchange=()=>updateCamera();
-}
-(async function boot(){readCfg();wireUI();setStatus('','Laster kart…');initMap();await initTrimble();})();
-</script>
-</body>
-</html>
+function syncTopCRS(){cfg.crs='ntm10';drawModels();updateCamera();fitAll();
